@@ -62,10 +62,6 @@ atlassian-ide-plugin.xml
 *.so
 *.dylib
 
-# 忽视所有以下列名称结尾的文件
-*.err
-*.log.err
-
 # Test binary, build with `go test -c`
 *.test
 
