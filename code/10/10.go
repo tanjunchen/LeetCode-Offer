@@ -1,5 +1,6 @@
 package main
 
+// 斐波那契数列
 // 超出时间限制
 func fib(n int) int {
 	if n == 0 {

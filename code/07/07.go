@@ -1,9 +1,6 @@
 package main
 
-func main() {
-
-}
-
+// 重建二叉树
 // Definition for a binary tree node.
 type TreeNode struct {
 	Val   int

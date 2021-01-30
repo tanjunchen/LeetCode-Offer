@@ -1,5 +1,6 @@
 package main
 
+// 从尾到头打印链表
 // Definition for singly-linked list.
 type ListNode struct {
 	Val  int

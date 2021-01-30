@@ -4,6 +4,7 @@ import (
 	"container/list"
 )
 
+// 用两个栈实现队列
 type CQueue struct {
 	s1, s2 *list.List
 }

@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 // 旋转数组的最小数字
 // o(n)
 func minArray(numbers []int) int {
@@ -18,7 +16,7 @@ func minArray(numbers []int) int {
 	return min
 }
 
-func minArray(numbers []int) int {
+func minArray2(numbers []int) int {
 	length := len(numbers)
 	if length == 0 {
 		return -1
@@ -35,9 +33,4 @@ func minArray(numbers []int) int {
 		}
 	}
 	return numbers[l]
-}
-
-func main() {
-	res := []int{3, 4, 5, 1, 2}
-	fmt.Println(minArray(res))
 }
