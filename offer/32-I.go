@@ -1,4 +1,3 @@
-
 package main
 
 /***
@@ -13,20 +12,31 @@ package main
 解法一
 说明：
 **/
-
-
 /**
-解法二
-说明：
-**/
-
-
-/**
-解法三
-说明：
-**/
-
-
-func main() {
-    
+ * Definition for a binary tree node.
+ * type TreeNode struct {
+ *     Val int
+ *     Left *TreeNode
+ *     Right *TreeNode
+ * }
+ */
+func levelOrder(root *TreeNode) []int {
+	if root == nil {
+		return []int{}
+	}
+	var res []int
+	var queue []*TreeNode
+	queue = append(queue, root)
+	for len(queue) > 0 {
+		node := queue[0]
+		res = append(res, node.Val)
+		if node.Left != nil {
+			queue = append(queue, node.Left)
+		}
+		if node.Right != nil {
+			queue = append(queue, node.Right)
+		}
+		queue = queue[1:]
+	}
+	return res
 }
