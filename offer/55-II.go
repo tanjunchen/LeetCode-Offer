@@ -1,5 +1,6 @@
-
 package main
+
+import "math"
 
 /***
 "题目：**平衡二叉树**
@@ -14,19 +15,32 @@ package main
 说明：
 **/
 
-
 /**
-解法二
-说明：
-**/
+ * Definition for a binary tree node.
+ * type TreeNode struct {
+ *     Val int
+ *     Left *TreeNode
+ *     Right *TreeNode
+ * }
+ */
+func isBalanced(root *TreeNode) bool {
+	return dfsTree(root) != -1
+}
 
-
-/**
-解法三
-说明：
-**/
-
-
-func main() {
-    
+func dfsTree(root *TreeNode) float64 {
+	if root == nil {
+		return 0
+	}
+	l := dfsTree(root.Left)
+	if l == -1 {
+		return -1
+	}
+	r := dfsTree(root.Right)
+	if r == -1 {
+		return -1
+	}
+	if math.Abs(l-r) > 1 {
+		return -1
+	}
+	return math.Max(l, r) + 1
 }

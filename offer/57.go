@@ -1,4 +1,3 @@
-
 package main
 
 /***
@@ -13,20 +12,18 @@ package main
 解法一
 说明：
 **/
-
-
-/**
-解法二
-说明：
-**/
-
-
-/**
-解法三
-说明：
-**/
-
-
-func main() {
-    
+func twoSum(nums []int, target int) []int {
+	i, j := 0, len(nums)-1
+	for i < j {
+		if nums[i]+nums[j] == target {
+			return []int{nums[i], nums[j]}
+		}
+		if nums[j]+nums[i] > target {
+			j--
+		}
+		if nums[i]+nums[j] < target {
+			i++
+		}
+	}
+	return []int{}
 }

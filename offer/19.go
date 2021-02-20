@@ -1,4 +1,3 @@
-
 package main
 
 /***
@@ -14,19 +13,15 @@ package main
 说明：
 **/
 
-
 /**
 解法二
 说明：
 **/
-
 
 /**
 解法三
 说明：
 **/
 
-
-func main() {
-    
+func main() { 
 }

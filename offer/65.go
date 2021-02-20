@@ -10,7 +10,7 @@ package main
 
 /**
 解法一
-说明：
+说明：逻辑异或操作
 **/
 func add(a int, b int) int {
 	for b != 0 {

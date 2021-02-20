@@ -1,4 +1,3 @@
-
 package main
 
 /***
@@ -13,20 +12,23 @@ package main
 解法一
 说明：
 **/
-
+func firstUniqChar(s string) byte {
+	if len(s) == 0 {
+		return ' '
+	}
+	res := make([]int, 26)
+	for _, v := range s {
+		res[v-'a']++
+	}
+	for i := 0; i < len(s); i++ {
+		if res[s[i]-'a'] == 1 {
+			return s[i]
+		}
+	}
+	return ' '
+}
 
 /**
 解法二
-说明：
+说明：有序的 map
 **/
-
-
-/**
-解法三
-说明：
-**/
-
-
-func main() {
-    
-}

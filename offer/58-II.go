@@ -1,4 +1,3 @@
-
 package main
 
 /***
@@ -11,22 +10,29 @@ package main
 
 /**
 解法一
-说明：
+说明： 如果 n 超过 s 的长度，会有问题
 **/
+func reverseLeftWords(s string, n int) string {
+	return s[n:len(s)] + s[0:n]
+}
 
+func reverseLeftWords2(s string, n int) string {
+	var str1, str2 string
+	for i := 0; i < len(s); i++ {
+		if i < n {
+			str1 += string(s[i])
+		} else {
+			str2 += string(s[i])
+		}
+	}
+	return str2 + str1
+}
 
-/**
-解法二
-说明：
-**/
-
-
-/**
-解法三
-说明：
-**/
-
-
-func main() {
-    
+func reverseLeftWords3(s string, n int) string {
+	length := len(s)
+	n = n % length
+	if n == 0 {
+		return s
+	}
+	return string(s[n:length] + s[:n])
 }

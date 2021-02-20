@@ -1,4 +1,3 @@
-
 package main
 
 /***
@@ -12,50 +11,74 @@ package main
 /**
 解法一
 说明：
+
 **/
-// 二分查找
-func missingNumber(nums []int) int {
-	i, j := 0, len(nums)
-	for i < j {
-		mid := (i + j) >> 1
-		if nums[mid] == mid {
-			i = mid + 1
-		} else {
-			j = mid
-		}
-	}
-	return i
-}
-
-// 标记数组-记录数字
-func missingNumber2(nums []int) int {
-	flag := make([]bool, len(nums)+1)
-	for _, v := range nums {
-		flag[v] = true
-	}
-	for i := 0; i < len(flag); i++ {
-		if flag[i] == false {
-			return i
-		}
-	}
-	return 0
-}
-
-// 数字异或运算
-func missingNumber3(nums []int) int {
-	var count = len(nums)
+func search(nums []int, target int) int {
+	// 直接一次遍历查找
+	count := 0
 	for i := 0; i < len(nums); i++ {
-		count ^= i ^ nums[i]
+		if nums[i] == target {
+			count++
+		}
 	}
 	return count
 }
 
-// 总和的差值
-func missingNumber4(nums []int) int {
-	n := len(nums)
-	sum := (n + 1) * n >> 1
-	for _, v := range nums {
-		sum -= v
+func search2(nums []int, target int) int {
+	// 直接一次遍历查找
+	res := make(map[int]int, len(nums))
+	for i := 0; i < len(nums); i++ {
+		if _, ok := res[nums[i]]; ok {
+			res[nums[i]]++
+		} else {
+			res[nums[i]] = 1
+		}
 	}
-	return sum
+	return res[target]
+}
+
+func search3(nums []int, target int) int {
+	n := len(nums)
+	if n <= 0 {
+		return 0
+	}
+
+	left, right, mid, times := 0, n-1, 0, 0
+
+	for left <= right {
+		mid = (left + right) / 2
+		if nums[mid] == target {
+			times++
+			break
+		} else if nums[mid] > target {
+			right = mid - 1
+		} else {
+			left = mid + 1
+		}
+	}
+
+	// 没有找到目标值
+	if left > right {
+		return 0
+	}
+
+	// 向左查找
+	for i := mid - 1; i >= 0; i-- {
+		if nums[i] == target {
+			times++
+		} else {
+			break
+		}
+	}
+
+	// 向右查找
+	for i := mid + 1; i < n; i++ {
+		if nums[i] == target {
+			times++
+		} else {
+			break
+		}
+	}
+
+	return times
 }

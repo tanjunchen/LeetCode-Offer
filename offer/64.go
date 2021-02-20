@@ -20,7 +20,7 @@ func sumNums2(n int) int {
 	if n == 1 {
 		return 1
 	}
-	return n + sumNums(n-1)
+	return n + sumNums2(n-1)
 }
 
 func sumNums3(n int) int {
