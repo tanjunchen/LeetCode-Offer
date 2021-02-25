@@ -1,6 +1,24 @@
 # 面试准备
 
+## 建议提前准备
+
+准备时长 6 个月
+技术博客、技术栈的垂直积累
+开源项目 patch pr
+leetcode 算法题
+加强沟通、询问大厂朋友的相关工作岗位的技术栈
+
+关于项目准备
+1. 项目的技术点(应当描述清楚)
+1. 数据化描述你的项目
+
 ## 自我介绍
+
+## 操作系统
+
+1. http/tcp  协议、大小
+1. 进程、线程
+1. 数据结构 
 
 ## Kubernetes
 
@@ -76,28 +94,54 @@ Kubernetes 的所有资源约定了版本号, 为什么要这么做?
 我认知中的Kubernetes，它是一个容器编排体系，是一套云原生的微服务架构。
 
 怎么扩展 kubernetes scheduler, 让它能 handle 大规模的节点调度？
-
-
- 
  
 ## Golang
+
+golang 中 make 与 new 的区别？
+
+make和new都是golang用来分配内存的內建函数，且在堆上分配内存，make 即分配内存，也初始化内存。new只是将内存清零，并没有初始化内存。
+make返回的还是引用类型本身；而new返回的是指向类型的指针。
+make只能用来分配及初始化类型为数组，slice，map，channel的数据；new可以分配任意类型的数据。
  
 goroutine 是怎么调度的？ GMP 的调度过程。
 
- 
 golang 的 gc 算法
 
-
+golang 与 java 的比较
 
 ## Java
 
+## 计算机网络
+
+简述从输入网址到浏览器显示的过程
+TCP 为什么是三次握手四次挥手
+TCP 如何保障数据包有效
+HTTPS 和 HTTP 的区别
+
+## OS 操作系统
+
+https://leetcode-cn.com/circle/discuss/zIxrWn/
+https://leetcode-cn.com/circle/discuss/aqTOW4/
+https://leetcode-cn.com/circle/discuss/UrcaDQ/
+
+进程与线程的区别
+堆与栈的区别
+内核态和用户态的划分与切换
+虚拟地址怎么映射到物理地址
+简述 IO 多路复用
+简述进程通信的各种方法
+
+## 数据库
+
+简述关系型数据库与菲关系形数据库的区别与联系
+简述数据库的事务
+
 ## Istio、envoy 服务网格以及源码解析
-
 ## 中间件
-
 ## 算法题
-
 从无限的字符流中, 随机选出 10 个字符？
+https://leetcode-cn.com/circle/discuss/pv7bY1/
+
 
 ## HR 面试
 
