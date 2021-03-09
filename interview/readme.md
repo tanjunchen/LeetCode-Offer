@@ -137,7 +137,324 @@ https://leetcode-cn.com/circle/discuss/UrcaDQ/
 简述数据库的事务
 
 ## Istio、envoy 服务网格以及源码解析
+
+想问问如何做到 servicemesh 的平滑升级、服务的平滑重启过程？
+
+对于 HTTP 协议这种连接阻塞协议，多数人不能回答出正确的流程，比如先关闭KeepAlive，处理完此连接上的请求直接关闭连接，再关闭监听器； 
+对于 HTTP/2 这种多路复用协议，无法回答出 goaway 帧的作用: HTTP/2 依赖 goaway 帧让客户端关闭连接，以达到重建连接的目的； 而上述问题，是实现 Service Mesh 中 sidecar 平滑重启的关键。
+
+
+Envoy 有哪些核心的功能
+
+高性能设计、Filter 架构、良好的 HTTP/2 支持、多种协议支持、可观测性、边缘网关、服务发现、Wasm 扩展。
+
+Envoy xds 协议的介绍
+
+xDS 包含 LDS（监听器发现服务）、CDS（集群发现服务）、EDS（节点发现服务）、SDS（密钥发现服务）和 RDS（路由发现服务）。
+xDS 中每种类型对应一个发现的资源，这些类型数据存储在 xDS 协议的 Discovery Request 和 Discovery Response 的 TypeUrl 字段中, 这个字段按照以下格式存储：
+
+type.googleapis.com/<resource type>
+
+envoy.api.v2.Listener（LDS）：对应 Listener 数据类型，包含了监听器的名称、监听端口、监听地址等信息，
+通过动态更新此类型，可以动态新增监听器或者更新监听器的地址端口等信息。
+
+{
+
+  "name": "...",
+
+  "address": "{...}",
+
+  "filter_chains": [],
+
+  "use_original_dst": "{...}",
+
+  "per_connection_buffer_limit_bytes": "{...}",
+
+  "metadata": "{...}",
+
+  "drain_type": "...",
+
+  "listener_filters": [],
+
+  "listener_filters_timeout": "{...}",
+
+  "continue_on_listener_filters_timeout": "...",
+
+  "transparent": "{...}",
+
+  "freebind": "{...}",
+
+  "socket_options": [],
+
+  "tcp_fast_open_queue_length": "{...}",
+
+  "traffic_direction": "...",
+
+  "udp_listener_config": "{...}",
+
+  "api_listener": "{...}",
+
+  "connection_balance_config": "{...}",
+
+  "reuse_port": "...",
+
+  "access_log": []
+
+}
+
+envoy.api.v2.RouteConfiguration（RDS）：对应 Envoy 中的 Route 类型，用于更新 virtual_hosts，
+以及 virtual_hosts 包含的路由表信息、路由规则、针对路由的限流、路由级别的插件等，包括路由匹配到的 Cluster。
+
+{
+
+  "name": "...",
+
+  "virtual_hosts": [],
+
+  "vhds": "{...}",
+
+  "internal_only_headers": [],
+
+  "response_headers_to_add": [],
+
+  "response_headers_to_remove": [],
+
+  "request_headers_to_add": [],
+
+  "request_headers_to_remove": [],
+
+  "most_specific_header_mutations_wins": "...",
+
+  "validate_clusters": "{...}"
+
+}
+
+envoy.api.v2.Cluster（CDS）：对应 Envoy 中的 Cluster 类型，包含了 Cluster 是采用静态配置数据，
+还是采用动态 EDS 发现的方式，包括 Cluster 的负载均衡策略、健康检查配置等，以及服务级别的插件设置。
+
+{
+
+  "transport_socket_matches": [],
+
+  "name": "...",
+
+  "alt_stat_name": "...",
+
+  "type": "...",
+
+  "cluster_type": "{...}",
+
+  "eds_cluster_config": "{...}",
+
+  "connect_timeout": "{...}",
+
+  "per_connection_buffer_limit_bytes": "{...}",
+
+  "lb_policy": "...",
+
+  "hosts": [],
+
+  "load_assignment": "{...}",
+
+  "health_checks": [],
+
+  "max_requests_per_connection": "{...}",
+
+  "circuit_breakers": "{...}",
+
+  "tls_context": "{...}",
+
+  "upstream_http_protocol_options": "{...}",
+
+  "common_http_protocol_options": "{...}",
+
+  "http_protocol_options": "{...}",
+
+  "http2_protocol_options": "{...}",
+
+  "extension_protocol_options": "{...}",
+
+  "typed_extension_protocol_options": "{...}",
+
+  "dns_refresh_rate": "{...}",
+
+  "dns_failure_refresh_rate": "{...}",
+
+  "respect_dns_ttl": "...",
+
+  "dns_lookup_family": "...",
+
+  "dns_resolvers": [],
+
+  "use_tcp_for_dns_lookups": "...",
+
+  "outlier_detection": "{...}",
+
+  "cleanup_interval": "{...}",
+
+  "upstream_bind_config": "{...}",
+
+  "lb_subset_config": "{...}",
+
+  "ring_hash_lb_config": "{...}",
+
+  "original_dst_lb_config": "{...}",
+
+  "least_request_lb_config": "{...}",
+
+  "common_lb_config": "{...}",
+
+  "transport_socket": "{...}",
+
+  "metadata": "{...}",
+
+  "protocol_selection": "...",
+
+  "upstream_connection_options": "{...}",
+
+  "close_connections_on_host_health_failure": "...",
+
+  "drain_connections_on_host_removal": "...",
+
+  "filters": [],
+
+  "track_timeout_budgets": "..."
+
+}
+
+envoy.api.v2.ClusterLoadAssignment（EDS）：EDS，也就是我们常说的服务发现。包含服务名、节点信息和 LB 策略等数据。
+
+{
+
+  "cluster_name": "...",
+
+  "endpoints": [],
+
+  "policy": "{...}"
+
+}
+
+envoy.api.v2.Auth.Secret（SDS）：用于发现证书信息，以动态更新证书。
+早期 Istio 使用变更 TLS 证书文件，然后热重启 Envoy 的方式更新证书，现在通过 SDS 即可动态更新证书。
+
+{
+
+  "name": "...",
+
+  "tls_certificate": "{...}",
+
+  "session_ticket_keys": "{...}",
+
+  "validation_context": "{...}",
+
+  "generic_secret": "{...}"
+
+}
+
+
+
+
+
 ## 中间件
+
+配置中心、注册中心、负载均衡器、路由器、限流熔断、连接池、网关、可观测性
+
+可观测性之 Trace：更快速定位问题(Dapper)
+
+
+
+为什么需要配置中心
+
+1. 减少发版次数
+2. 提升安全性
+
+配置中心的特性
+
+实时感知变更、变更频率低、安全性要求高、变更审计、灰度发布、变更回滚、弱依赖、易用的图形界面
+                              
+配置中心选型
+
+etcd、Apollo、Confd
+
+配置中心的实时变更是如何实现的
+
+长连接 watch、HTTP 长轮询、定时同步、watch+定时轮询
+
+在微服务中我们经常要求服务是无状态的，其实是指服务内存或者本地不保存任何节点相关的信息，这样就可以做到服务扩缩容、迁移的机器无关性；
+相反有状态服务，就是服务所在的机器上存有节点相关的信息，比如和某个客户端建立了 session 连接。在负载均衡模块我们提到了一种会话保持（Sticky Sessions）的技术，这种就属于有状态的服务。
+
+HTTP: 这里可以给出一个经验值，一般情况下连接池容量设置在 10-100 的区间内是比较合理的。(MaxIdleConns)
+      
+在你看来 HTTP/2 到底需不需要连接池？
+
+需要，但和传统的阻塞式连接池也就是 HTTP 1.0 的连接池有一些区别。
+实际上HTTP/2 已经复用了连接，从某种程度上讲实现连接池已经没有太多意义了，多路复用做到一条连接就可以了，
+但因为 HTTP 2 .0 还是基于 TCP 连接的，而 TCP 存在队头阻塞的问题，比如某条连接突然遇到了网络重传，此时会阻塞连接。
+另外在一些高并发场景，一条连接难以跑满带宽，也需要创建多条连接。 (maxConcurrentStreams)
+
+网关 API Gateway
+
+我们先来看一下微服务网关主要提供哪些功能。
+
+统一流量接入：提供统一的流量入口，这样就可以由统一的入口管理流量，设置各种策略，比如统一的 Token 认证等。
+
+业务聚合：在具体的业务中，经常需要聚合多个服务的结果集，返回给客户端，这个时候可以由 API 网关聚合数据然后返回给客户端。
+
+协议转换：一般入口层，多使用 HTTP 协议的 RESTful 接口，而后端服务的协议可能有多种，比如 gRPC、Thrift 等。
+
+中间件策略：设置统一的中间件策略层，可以在这一层做一些限流熔断、南北向流量的服务治理功能。
+
+安全认证：一些 Token 认证功能，比如数据是否被篡改的认证，可以在 API 网关中做，这也是经常用到的功能。
+
+证书管理：随着对外网安全性能要求的增高，现在基本上都要对外提供 HTTPS 的服务，以保证数据不会被劫持、篡改等问题，在这一层做证书对内网的拆卸非常合适。由一个统一的入口管理接口，降低了证书更换时的复杂度。
+
+常用微服务网关：
+
+Kong、Spring Cloud Zuul、Traefik 
+
+长连网关
+
+这里的长连网关，指的是通过私有协议或者 gRPC、HTTP/2 等协议代替 HTTP 协议。通过长连接通道，减少客户端和网关的建连次数，
+同时通过压缩 header 等方式，减少通信中产生的流量，以达到提高客户端响应速度的目的，让用户在 App 的使用体验上更上一个台阶。
+
+HTTP 连接是阻塞的、无法复用的，HTTP/2 的连接是非阻塞的、多路复用的。
+
+相对于传统的动态加权负载均衡，P2C 解决的最大问题，就是“羊群效应”。
+
+为什么四层负载均衡中流量会不均衡？
+
+因为四层负载均衡器基于连接做负载均衡，当我们摘掉某一个节点，也就是把某个节点的权重设置为 0 的时候，由于连接还是保持的，流量依然会打到这个节点，所以使用四层负载均衡器很多时候要等待一整天才能将节点无损地摘掉。
+
+负载均衡后各节点流量均衡，后端服务的负载就一定一致吗？
+
+节点下线后如何及时摘掉节点？
+
+金丝雀发布也叫灰度发布，实际上就是将少量的生产流量路由到线上服务的新版本中，以验证新版本的准确性和稳定性。
+
+一般情况下我们会等待注册中心的通知，但因为注册中心的中心化异步推送机制，往往收到信息不够及时，可以通过 upsteam 节点返回服务健康检查失败的头信息，让客户端可以快速摘掉不健康的节点。
+
+现在大家不都用的zk,etcd,为这里推荐AP类型的呢？
+
+CP 的注册中心并非不可用，在服务集群规模比较小的情况下，也是可以选择的”。Eureka 典型的 AP,作为分布式场景下的服务发现的产品较为合适，服务发现场景的可用性优先级较高，一致性并不是特别致命。
+其次 CP 类型的场景 Consul,也能提供较高的可用性，并能 k-v store 服务保证一致性。而Zookeeper、Etcd则是CP类型牺牲可用性，在服务发现场景并没太大优势。
+
+注册中心完全故障了，服务是否还能正常访问？
+
+注册中心因为高负载，推送了异常的数据，服务是否还能正常访问？
+
+我们可以在客户端的服务发现 SDK 中加入自我保护机制：一旦服务的节点数量下降超过一定阈值，就进入自我保护状态，放弃使用新推送过来的服务注册信息。
+
+新加入的机器，出现了网络连通性问题（注册中心和机器网络正常，但服务机器之间网络异常），应该怎样应对？
+
+在负载均衡中我们可以加入被动健康检查（节点熔断）和主动健康检查来在客户端主动剔除失效的节点。
+
+服务是否应该完全信任注册中心推送的数据？
+
+服务发布后，节点频繁变更造成 N×M 次事件通知，形成广播风暴，该如何解决？
+
+我们可以将事件消息合并推送。在 Istio 的 Pilot 的模块中，实现了一种合并机制，100ms 内有新的事件消息时，便会继续等待下一条，最多等待 1s，当然时间的参数是可以配置的，这里我们说的是默认参数。
+
+
 ## 算法题
 从无限的字符流中, 随机选出 10 个字符？
 https://leetcode-cn.com/circle/discuss/pv7bY1/
