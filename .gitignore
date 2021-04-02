@@ -41,6 +41,8 @@ WebGo
 # Editor-based Rest Client
 .idea/httpRequests
 
+/interview
+
 # IntelliJ
 out/
 
